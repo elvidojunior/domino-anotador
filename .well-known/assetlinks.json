@@ -2,7 +2,7 @@
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target": {
     "namespace": "android_app",
-    "package_name": "com.elvidojunior.dominoanotador",
+    "package_name": "io.github.elvidojunior.twa",
     "sha256_cert_fingerprints": ["07:BF:DC:94:63:97:EC:B2:26:FE:1E:DD:C1:E6:91:4C:C8:5A:C5:79:C0:89:D4:6C:DA:B3:97:D2:E0:AB:5A:DA"]
   }
 }]
