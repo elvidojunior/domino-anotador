@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Anotador Dominó</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f3460">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icons/icon-192x192.png">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --azul: #0f3460;
+    --azul-medio: #16537e;
+    --azul-claro: #1a6fa8;
+    --acento: #e94560;
+    --dorado: #f5a623;
+    --blanco: #ffffff;
+    --gris-bg: #f0f4f8;
+    --gris-card: #dde6f0;
+    --texto-oscuro: #0a1628;
+    --sombra: 0 4px 20px rgba(15,52,96,0.18);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--azul);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── FONDO ── */
+  .bg {
+    position: fixed; inset: 0; z-index: 0;
+    background: linear-gradient(160deg, #0a1628 0%, #0f3460 50%, #16537e 100%);
+    overflow: hidden;
+  }
+  .bg::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(245,166,35,0.08) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(233,69,96,0.08) 0%, transparent 50%);
+  }
+  .dots-pattern {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  /* ── CONTENEDOR ── */
+  .app {
+    position: relative; z-index: 1;
+    max-width: 430px; margin: 0 auto;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+  }
+
+  /* ── PANTALLA ── */
+  .screen { display: none; flex-direction: column; min-height: 100vh; padding: 0 0 90px; }
+  .screen.active { display: flex; }
+
+  /* ── SETUP SCREEN ── */
+  .setup-screen {
+    align-items: center;
+    justify-content: center;
+    padding: 30px 24px;
+    gap: 20px;
+  }
+
+  .logo-wrap {
+    text-align: center;
+    animation: fadeDown 0.6s ease both;
+  }
+  .domino-icon { font-size: 48px; margin-bottom: 6px; }
+  .logo-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    letter-spacing: 3px;
+    color: var(--blanco);
+    line-height: 1;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  }
+  .logo-sub {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+
+  .setup-card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 22px;
+    width: 100%;
+    animation: fadeUp 0.6s ease 0.2s both;
+  }
+  .setup-card h3 {
+    color: var(--dorado);
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .meta-options {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .meta-btn {
+    flex: 1; min-width: 55px;
+    background: rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.7);
+    border-radius: 10px;
+    padding: 10px 4px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .meta-btn.active {
+    background: var(--dorado);
+    border-color: var(--dorado);
+    color: var(--texto-oscuro);
+    transform: scale(1.05);
+  }
+  .meta-custom {
+    display: flex; gap: 8px; margin-top: 10px;
+    align-items: center;
+  }
+  .meta-custom input {
+    flex: 1;
+    background: rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.15);
+    color: white;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px;
+  }
+  .meta-custom input::placeholder { color: rgba(255,255,255,0.3); }
+  .meta-custom input:focus { outline: none; border-color: var(--dorado); }
+
+  .teams-grid {
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .team-row {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .team-color-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .team-input {
+    flex: 1;
+    background: rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.15);
+    color: white;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .team-input::placeholder { color: rgba(255,255,255,0.3); }
+  .team-input:focus { outline: none; border-color: rgba(255,255,255,0.5); }
+  .remove-team {
+    background: rgba(233,69,96,0.2);
+    border: none; color: var(--acento);
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .add-team-btn {
+    background: rgba(255,255,255,0.06);
+    border: 2px dashed rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.5);
+    border-radius: 10px;
+    padding: 10px;
+    width: 100%;
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .add-team-btn:hover { border-color: rgba(255,255,255,0.4); color: rgba(255,255,255,0.8); }
+
+  .start-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--acento), #c0392b);
+    border: none;
+    color: white;
+    border-radius: 16px;
+    padding: 16px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(233,69,96,0.4);
+    animation: fadeUp 0.6s ease 0.4s both;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .start-btn:active { transform: scale(0.97); box-shadow: 0 3px 10px rgba(233,69,96,0.3); }
+
+  /* ── GAME SCREEN ── */
+  .game-header {
+    background: linear-gradient(135deg, var(--azul), var(--azul-medio));
+    padding: 16px 16px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .header-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    color: white;
+    letter-spacing: 2px;
+    flex: 1;
+  }
+  .header-meta {
+    font-size: 12px;
+    color: var(--dorado);
+    font-weight: 700;
+    background: rgba(245,166,35,0.15);
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(245,166,35,0.3);
+  }
+
+  .scores-area {
+    padding: 12px;
+    display: grid;
+    gap: 8px;
+  }
+  .scores-grid-2 { grid-template-columns: 1fr 1fr; }
+  .scores-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .scores-grid-4 { grid-template-columns: 1fr 1fr; }
+
+  .score-card {
+    border-radius: 16px;
+    padding: 14px 10px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s;
+    cursor: default;
+  }
+  .score-card.leader::after {
+    content: '★';
+    position: absolute;
+    top: 6px; right: 8px;
+    font-size: 12px;
+    color: var(--dorado);
+  }
+  .score-card.winner-card {
+    animation: pulse 0.6s ease infinite alternate;
+  }
+  .score-card-dark {
+    background: linear-gradient(145deg, var(--azul), var(--azul-claro));
+    border: 2px solid rgba(255,255,255,0.15);
+  }
+  .score-card-light {
+    background: rgba(255,255,255,0.92);
+    border: 2px solid rgba(15,52,96,0.12);
+  }
+  .score-team-name {
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .score-card-dark .score-team-name { color: rgba(255,255,255,0.7); }
+  .score-card-light .score-team-name { color: var(--azul-medio); }
+
+  .score-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    line-height: 1;
+    transition: all 0.3s;
+  }
+  .score-card-dark .score-number { color: white; }
+  .score-card-light .score-number { color: var(--azul); }
+
+  .score-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .score-card-dark .score-label { color: rgba(255,255,255,0.5); }
+  .score-card-light .score-label { color: rgba(15,52,96,0.4); }
+
+  .progress-bar-wrap {
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+    background: var(--dorado);
+  }
+  .score-card-light .progress-bar-wrap { background: rgba(15,52,96,0.08); }
+
+  /* ── HISTORIAL ── */
+  .history-section {
+    padding: 0 12px 8px;
+  }
+  .history-title {
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .history-table-wrap {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .history-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .history-table th {
+    background: rgba(255,255,255,0.08);
+    padding: 8px 6px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+    text-align: center;
+  }
+  .history-table th:first-child { width: 30px; color: var(--dorado); }
+  .history-table td {
+    padding: 7px 6px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.85);
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+  .history-table td:first-child {
+    color: rgba(255,255,255,0.3);
+    font-size: 11px;
+  }
+  .history-table tr:last-child td {
+    color: var(--dorado);
+    font-weight: 900;
+  }
+  .no-history {
+    text-align: center;
+    color: rgba(255,255,255,0.25);
+    font-size: 12px;
+    padding: 16px;
+  }
+
+  /* ── BOTTOM BAR ── */
+  .bottom-bar {
+    position: fixed;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 100%; max-width: 430px;
+    background: linear-gradient(0deg, rgba(10,22,40,0.98) 0%, rgba(10,22,40,0.85) 100%);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding: 10px 16px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 100;
+  }
+  .bottom-bar.hidden { display: none; }
+
+  .btn-restart {
+    background: linear-gradient(135deg, #e94560, #c0392b);
+    border: none;
+    color: white;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(233,69,96,0.3);
+    transition: transform 0.15s;
+    white-space: nowrap;
+  }
+  .btn-restart:active { transform: scale(0.95); }
+
+  .btn-undo {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.7);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-undo:active { transform: scale(0.95); }
+
+  .btn-add {
+    flex: 1;
+    background: linear-gradient(135deg, #27ae60, #1e8449);
+    border: none;
+    color: white;
+    border-radius: 16px;
+    padding: 14px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(39,174,96,0.35);
+    transition: transform 0.15s, box-shadow 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-add:active { transform: scale(0.97); }
+  .btn-add-icon { font-size: 22px; }
+
+  .btn-export {
+    background: rgba(245,166,35,0.15);
+    border: 1px solid rgba(245,166,35,0.3);
+    color: var(--dorado);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-export:active { transform: scale(0.95); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #0f1e35;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 24px 24px 0 0;
+    padding: 20px 20px 36px;
+    width: 100%; max-width: 430px;
+    animation: slideUp 0.3s ease;
+  }
+  .modal-handle {
+    width: 36px; height: 4px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+  .modal h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: white;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+  .modal-inputs {
+    display: flex; flex-direction: column; gap: 10px;
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+  .modal-team-input-row {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .modal-team-label {
+    font-size: 11px;
+    font-weight: 900;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    min-width: 60px;
+  }
+  .modal-score-input {
+    flex: 1;
+    background: rgba(255,255,255,0.07);
+    border: 2px solid rgba(255,255,255,0.12);
+    color: white;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    text-align: center;
+  }
+  .modal-score-input:focus {
+    outline: none;
+    border-color: var(--dorado);
+  }
+  .modal-score-input::placeholder { color: rgba(255,255,255,0.2); }
+
+  .modal-actions {
+    display: flex; gap: 10px; margin-top: 16px;
+  }
+  .modal-cancel {
+    flex: 1;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.5);
+    border-radius: 12px;
+    padding: 14px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 1px;
+    cursor: pointer;
+  }
+  .modal-confirm {
+    flex: 2;
+    background: linear-gradient(135deg, #27ae60, #1e8449);
+    border: none;
+    color: white;
+    border-radius: 12px;
+    padding: 14px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(39,174,96,0.35);
+  }
+
+  /* ── WINNER OVERLAY ── */
+  .winner-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(6px);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+    padding: 30px;
+  }
+  .winner-overlay.open { display: flex; }
+  .winner-trophy { font-size: 80px; animation: bounce 0.8s ease infinite alternate; }
+  .winner-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 5px;
+    color: var(--dorado);
+    text-transform: uppercase;
+  }
+  .winner-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    color: white;
+    line-height: 1;
+    text-shadow: 0 0 30px rgba(245,166,35,0.5);
+  }
+  .winner-score {
+    font-size: 16px;
+    color: rgba(255,255,255,0.5);
+    font-weight: 700;
+  }
+  .winner-continue {
+    margin-top: 10px;
+    background: var(--dorado);
+    border: none;
+    color: var(--texto-oscuro);
+    border-radius: 14px;
+    padding: 14px 32px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    cursor: pointer;
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeDown { from { opacity:0; transform: translateY(-20px); } to { opacity:1; transform: translateY(0); } }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  @keyframes pulse { from { box-shadow: 0 0 0 0 rgba(245,166,35,0.4); } to { box-shadow: 0 0 0 12px rgba(245,166,35,0); } }
+  @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-12px); } }
+  @keyframes scoreFlash { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+  .flash { animation: scoreFlash 0.3s ease; }
+
+  /* COLORES EQUIPO */
+  .c0 { background: #3498db; }
+  .c1 { background: #e74c3c; }
+  .c2 { background: #2ecc71; }
+  .c3 { background: #f39c12; }
+
+  .card-style-0 { background: linear-gradient(145deg, #1a6fa8, #0f3460); border: 2px solid rgba(52,152,219,0.4); }
+  .card-style-1 { background: rgba(255,255,255,0.93); border: 2px solid rgba(231,76,60,0.2); }
+  .card-style-2 { background: linear-gradient(145deg, #1e8449, #145a32); border: 2px solid rgba(46,204,113,0.4); }
+  .card-style-3 { background: linear-gradient(145deg, #d68910, #7d6608); border: 2px solid rgba(243,156,18,0.4); }
+</style>
+</head>
+<body>
+
+<div class="bg"><div class="dots-pattern"></div></div>
+
+<div class="app">
+
+  <!-- ══════════ SETUP SCREEN ══════════ -->
+  <div class="screen setup-screen active" id="setupScreen">
+
+    <div class="logo-wrap">
+      <div class="domino-icon">🀱🀲</div>
+      <div class="logo-title">ANOTADOR<br>DOMINÓ</div>
+      <div class="logo-sub">Scorekeeper Pro</div>
+    </div>
+
+    <div class="setup-card">
+      <h3>Meta de Puntos</h3>
+      <div class="meta-options">
+        <button class="meta-btn active" onclick="selectMeta(100)">100</button>
+        <button class="meta-btn" onclick="selectMeta(150)">150</button>
+        <button class="meta-btn" onclick="selectMeta(200)">200</button>
+        <button class="meta-btn" onclick="selectMeta(500)">500</button>
+      </div>
+      <div class="meta-custom">
+        <input type="number" id="metaCustom" placeholder="Otra meta..." min="1" max="9999" oninput="selectMetaCustom(this.value)">
+      </div>
+    </div>
+
+    <div class="setup-card">
+      <h3>Equipos</h3>
+      <div class="teams-grid" id="teamsGrid"></div>
+      <button class="add-team-btn" onclick="addTeamInput()" id="addTeamBtn">+ Agregar Equipo</button>
+    </div>
+
+    <button class="start-btn" onclick="startGame()">⚡ COMENZAR JUEGO</button>
+
+  </div>
+
+  <!-- ══════════ GAME SCREEN ══════════ -->
+  <div class="screen" id="gameScreen">
+
+    <div class="game-header">
+      <span class="header-logo">🀱 DOMINÓ</span>
+      <span class="header-meta" id="headerMeta">META: 200</span>
+    </div>
+
+    <div class="scores-area" id="scoresArea"></div>
+
+    <div class="history-section">
+      <div class="history-title">Historial de Manos</div>
+      <div class="history-table-wrap">
+        <table class="history-table" id="historyTable">
+          <thead><tr id="historyHeader"></tr></thead>
+          <tbody id="historyBody"><tr><td colspan="10" class="no-history">Sin manos aún</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="bottom-bar hidden" id="bottomBar">
+  <button class="btn-undo" onclick="undoLast()" title="Deshacer">↩</button>
+  <button class="btn-restart" onclick="confirmRestart()">↺ REINICIAR</button>
+  <button class="btn-add" onclick="openAddModal()">
+    <span class="btn-add-icon">＋</span> AGREGAR MANO
+  </button>
+  <button class="btn-export" onclick="exportHistory()" title="Descargar historial">⬇</button>
+</div>
+
+<!-- ADD HAND MODAL -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>AGREGAR MANO</h3>
+    <div class="modal-inputs" id="modalInputs"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">CANCELAR</button>
+      <button class="modal-confirm" onclick="confirmAddHand()">✓ GUARDAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- WINNER OVERLAY -->
+<div class="winner-overlay" id="winnerOverlay">
+  <div class="winner-trophy">🏆</div>
+  <div class="winner-title">¡Ganador!</div>
+  <div class="winner-name" id="winnerName">EQUIPO 1</div>
+  <div class="winner-score" id="winnerScore">200 puntos</div>
+  <button class="winner-continue" onclick="closeWinner()">SEGUIR JUGANDO</button>
+</div>
+
+<script>
+// ── STATE ──
+let state = {
+  meta: 200,
+  teams: [],
+  history: [],
+  winnerShown: false
+};
+
+const COLORS = ['#3498db','#e74c3c','#2ecc71','#f39c12'];
+const CARD_STYLES = ['card-style-0','card-style-1','card-style-2','card-style-3'];
+const TEXT_DARK = [false, true, false, false]; // true = texto oscuro
+
+// ── SETUP ──
+function initSetup() {
+  document.getElementById('teamsGrid').innerHTML = '';
+  ['Equipo 1','Equipo 2'].forEach(n => addTeamInput(n));
+  updateAddTeamBtn();
+}
+
+function addTeamInput(name = '') {
+  const grid = document.getElementById('teamsGrid');
+  const idx = grid.children.length;
+  if (idx >= 4) return;
+  const row = document.createElement('div');
+  row.className = 'team-row';
+  row.innerHTML = `
+    <div class="team-color-dot c${idx}"></div>
+    <input class="team-input" type="text" value="${name}" placeholder="Nombre equipo ${idx+1}" maxlength="14">
+    ${idx >= 2 ? `<button class="remove-team" onclick="removeTeamInput(this)">×</button>` : '<div style="width:32px"></div>'}
+  `;
+  grid.appendChild(row);
+  updateAddTeamBtn();
+}
+
+function removeTeamInput(btn) {
+  btn.closest('.team-row').remove();
+  // Re-colorear dots
+  document.querySelectorAll('.team-color-dot').forEach((d,i) => {
+    d.className = `team-color-dot c${i}`;
+  });
+  updateAddTeamBtn();
+}
+
+function updateAddTeamBtn() {
+  const count = document.getElementById('teamsGrid').children.length;
+  document.getElementById('addTeamBtn').style.display = count >= 4 ? 'none' : 'block';
+}
+
+let selectedMeta = 200;
+function selectMeta(val) {
+  selectedMeta = val;
+  document.querySelectorAll('.meta-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('metaCustom').value = '';
+}
+function selectMetaCustom(val) {
+  if (!val) return;
+  selectedMeta = parseInt(val);
+  document.querySelectorAll('.meta-btn').forEach(b => b.classList.remove('active'));
+}
+
+function startGame() {
+  const inputs = document.querySelectorAll('.team-input');
+  const names = [];
+  inputs.forEach((inp, i) => {
+    names.push(inp.value.trim() || `Equipo ${i+1}`);
+  });
+  if (names.length < 2) { alert('Necesitas al menos 2 equipos'); return; }
+
+  state.meta = selectedMeta || 200;
+  state.teams = names.map((n, i) => ({ name: n, score: 0, color: COLORS[i], style: CARD_STYLES[i], darkText: TEXT_DARK[i] }));
+  state.history = [];
+  state.winnerShown = false;
+
+  document.getElementById('setupScreen').classList.remove('active');
+  document.getElementById('gameScreen').classList.add('active');
+  document.getElementById('bottomBar').classList.remove('hidden');
+
+  renderGame();
+}
+
+// ── GAME ──
+function renderGame() {
+  document.getElementById('headerMeta').textContent = `META: ${state.meta}`;
+
+  // Scores
+  const area = document.getElementById('scoresArea');
+  const n = state.teams.length;
+  area.className = 'scores-area scores-grid-' + (n <= 3 ? n : 4);
+  area.innerHTML = '';
+
+  const maxScore = Math.max(...state.teams.map(t => t.score));
+
+  state.teams.forEach((team, i) => {
+    const pct = Math.min(100, Math.round((team.score / state.meta) * 100));
+    const isLeader = team.score === maxScore && team.score > 0;
+    const isWinner = team.score >= state.meta;
+    const card = document.createElement('div');
+    card.className = `score-card ${team.style} ${isLeader ? 'leader' : ''} ${isWinner ? 'winner-card' : ''}`;
+    card.id = `scoreCard${i}`;
+    card.innerHTML = `
+      <div class="score-team-name" style="color:${team.darkText ? '#1a4a7a' : 'rgba(255,255,255,0.75)'}">${team.name}</div>
+      <div class="score-number" id="scoreNum${i}" style="color:${team.darkText ? '#0f3460' : 'white'}">${team.score}</div>
+      <div class="score-label" style="color:${team.darkText ? 'rgba(15,52,96,0.5)' : 'rgba(255,255,255,0.45)'}">puntos</div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" style="width:${pct}%; background:${team.darkText ? '#0f3460' : team.color}"></div>
+      </div>
+    `;
+    area.appendChild(card);
+  });
+
+  // History table
+  const header = document.getElementById('historyHeader');
+  header.innerHTML = `<th>#</th>` + state.teams.map(t => `<th>${t.name}</th>`).join('');
+
+  const tbody = document.getElementById('historyBody');
+  if (state.history.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${state.teams.length+1}" class="no-history">Sin manos aún</td></tr>`;
+  } else {
+    tbody.innerHTML = state.history.map((row, idx) =>
+      `<tr><td>${idx+1}</td>${row.map(v => `<td>${v !== null ? v : '-'}</td>`).join('')}</tr>`
+    ).join('');
+    // Last row = totals
+    const totRow = document.createElement('tr');
+    totRow.innerHTML = `<td>Σ</td>` + state.teams.map(t => `<td>${t.score}</td>`).join('');
+    tbody.appendChild(totRow);
+  }
+
+  // Check winner
+  const winner = state.teams.find(t => t.score >= state.meta);
+  if (winner && !state.winnerShown) {
+    state.winnerShown = true;
+    setTimeout(() => showWinner(winner), 500);
+  }
+}
+
+// ── MODAL ──
+function openAddModal() {
+  const inp = document.getElementById('modalInputs');
+  inp.innerHTML = state.teams.map((t, i) => `
+    <div class="modal-team-input-row">
+      <div class="modal-team-label" style="color:${t.color}">${t.name}</div>
+      <input class="modal-score-input" type="number" id="handInput${i}" placeholder="0" min="0" max="999">
+    </div>
+  `).join('');
+  document.getElementById('addModal').classList.add('open');
+  setTimeout(() => document.getElementById('handInput0').focus(), 100);
+}
+
+function closeModal() {
+  document.getElementById('addModal').classList.remove('open');
+}
+
+function confirmAddHand() {
+  const values = state.teams.map((t, i) => {
+    const v = document.getElementById(`handInput${i}`).value;
+    return v === '' ? null : parseInt(v);
+  });
+
+  if (values.every(v => v === null)) { alert('Ingresa al menos un puntaje'); return; }
+
+  state.history.push(values);
+  values.forEach((v, i) => {
+    if (v !== null) state.teams[i].score += v;
+  });
+
+  closeModal();
+  renderGame();
+
+  // Flash animation
+  values.forEach((v, i) => {
+    if (v !== null) {
+      const el = document.getElementById(`scoreNum${i}`);
+      if (el) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+    }
+  });
+}
+
+// ── UNDO ──
+function undoLast() {
+  if (state.history.length === 0) { alert('No hay manos para deshacer'); return; }
+  const last = state.history.pop();
+  last.forEach((v, i) => {
+    if (v !== null) state.teams[i].score -= v;
+  });
+  state.winnerShown = state.teams.some(t => t.score >= state.meta);
+  renderGame();
+}
+
+// ── RESTART ──
+function confirmRestart() {
+  if (confirm('¿Reiniciar el juego? Se borrarán todos los puntos.')) {
+    state.teams.forEach(t => t.score = 0);
+    state.history = [];
+    state.winnerShown = false;
+    renderGame();
+  }
+}
+
+// ── WINNER ──
+function showWinner(team) {
+  document.getElementById('winnerName').textContent = team.name.toUpperCase();
+  document.getElementById('winnerScore').textContent = `${team.score} puntos`;
+  document.getElementById('winnerOverlay').classList.add('open');
+}
+function closeWinner() {
+  document.getElementById('winnerOverlay').classList.remove('open');
+}
+
+// ── EXPORT ──
+function exportHistory() {
+  if (state.history.length === 0) { alert('No hay historial para descargar'); return; }
+  let csv = 'Mano,' + state.teams.map(t => t.name).join(',') + '\n';
+  state.history.forEach((row, i) => {
+    csv += `${i+1},` + row.map(v => v !== null ? v : '').join(',') + '\n';
+  });
+  csv += 'TOTAL,' + state.teams.map(t => t.score).join(',') + '\n';
+  csv += `Meta:,${state.meta}\n`;
+  csv += `Fecha:,${new Date().toLocaleString('es-DO')}\n`;
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `domino_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// ── INIT ──
+initSetup();
+
+// ── SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(reg => console.log('[App] SW registrado:', reg.scope))
+      .catch(err => console.warn('[App] SW falló:', err));
+  });
+}
+</script>
+</body>
+</html>
