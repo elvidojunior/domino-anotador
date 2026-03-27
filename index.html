@@ -520,7 +520,7 @@ function exportHistory() {
 }
 
 // ── INIT — siempre empieza desde cero ──
-try { localStorage.removeItem('domino_state'); } catch(e) {}
+try { localStorage.clear(); } catch(e) {}
 state = { meta: 200, teams: [], history: [], winnerShown: false };
 initSetup();
 
