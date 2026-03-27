@@ -195,7 +195,6 @@
   <button class="btn-undo" onclick="undoLast()">↩</button>
   <button class="btn-restart" onclick="confirmRestart()">↺ RESET</button>
   <button class="btn-add" onclick="openAddModal()"><span style="font-size:22px">＋</span> AGREGAR MANO</button>
-  <button class="btn-export" onclick="exportHistory()">⬇</button>
 </div>
 
 <!-- ADD MODAL -->
@@ -244,26 +243,10 @@ const COLORS = ['#3498db','#e74c3c','#2ecc71','#f39c12'];
 const CARD_STYLES = ['card-style-0','card-style-1','card-style-2','card-style-3'];
 const TEXT_DARK = [false, true, false, false];
 
-// ── AUTO GUARDADO ──
-function saveState() {
-  try { localStorage.setItem('domino_state', JSON.stringify(state)); } catch(e) {}
-}
-function loadState() {
-  try {
-    const saved = localStorage.getItem('domino_state');
-    if (saved) {
-      const s = JSON.parse(saved);
-      if (s && s.teams && s.teams.length >= 2) {
-        state = s;
-        return true;
-      }
-    }
-  } catch(e) {}
-  return false;
-}
-function clearState() {
-  try { localStorage.removeItem('domino_state'); } catch(e) {}
-}
+// ── SIN AUTO GUARDADO ──
+function saveState() {}
+function loadState() { return false; }
+function clearState() { try { localStorage.removeItem('domino_state'); } catch(e) {} }
 
 // ── SETUP ──
 function initSetup(keepNames) {
