@@ -317,10 +317,13 @@ function startGame() {
   const names = [];
   inputs.forEach((inp, i) => names.push(inp.value.trim() || `Equipo ${i+1}`));
   if (names.length < 2) { alert('Necesitas al menos 2 equipos'); return; }
-  state.meta = selectedMeta || 200;
-  state.teams = names.map((n, i) => ({ name: n, score: 0, color: COLORS[i], style: CARD_STYLES[i], darkText: TEXT_DARK[i] }));
-  state.history = [];
-  state.winnerShown = false;
+  clearState();
+  state = {
+    meta: selectedMeta || 200,
+    teams: names.map((n, i) => ({ name: n, score: 0, color: COLORS[i], style: CARD_STYLES[i], darkText: TEXT_DARK[i] })),
+    history: [],
+    winnerShown: false
+  };
   showGameScreen();
   saveState();
 }
