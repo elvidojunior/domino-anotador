@@ -52,6 +52,8 @@
   .add-team-btn { background: rgba(255,255,255,0.06); border: 2px dashed rgba(255,255,255,0.2); color: rgba(255,255,255,0.5); border-radius: 10px; padding: 10px; width: 100%; font-family: 'Nunito', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.2s; }
   .start-btn { width: 100%; background: linear-gradient(135deg, var(--acento), #c0392b); border: none; color: white; border-radius: 16px; padding: 16px; font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; cursor: pointer; box-shadow: 0 6px 20px rgba(233,69,96,0.4); animation: fadeUp 0.6s ease 0.4s both; transition: transform 0.15s, box-shadow 0.15s; }
   .start-btn:active { transform: scale(0.97); }
+  .install-btn { width: 100%; background: rgba(255,255,255,0.07); border: 2px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); border-radius: 16px; padding: 14px; font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 2px; cursor: pointer; transition: all 0.2s; }
+  .install-btn:active { background: rgba(255,255,255,0.15); }
 
   /* GAME HEADER */
   .game-header { background: linear-gradient(135deg, var(--azul), var(--azul-medio)); padding: 14px 16px 10px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 10px; }
@@ -167,6 +169,7 @@
       <button class="add-team-btn" onclick="addTeamInput()" id="addTeamBtn">+ Agregar Equipo</button>
     </div>
     <button class="start-btn" onclick="startGame()">⚡ COMENZAR JUEGO</button>
+    <button class="install-btn" id="installBtn" style="display:none" onclick="installApp()">📲 INSTALAR APP EN ESTE DISPOSITIVO</button>
   </div>
 
   <!-- GAME -->
@@ -517,6 +520,29 @@ function exportHistory() {
   a.href = URL.createObjectURL(blob);
   a.download = `domino_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
+}
+
+// ── INSTALAR APP ──
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBtn').style.display = 'block';
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBtn').style.display = 'none';
+  deferredPrompt = null;
+});
+function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => {
+      deferredPrompt = null;
+      document.getElementById('installBtn').style.display = 'none';
+    });
+  } else {
+    alert('Para instalar: toca los 3 puntos del navegador → "Agregar a pantalla de inicio"');
+  }
 }
 
 // ── INIT — siempre empieza desde cero ──
