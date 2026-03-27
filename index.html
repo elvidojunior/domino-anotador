@@ -322,15 +322,31 @@ function showGameScreen() {
 function goToMenu() {
   const inp = document.getElementById('menuTeamInputs');
   inp.innerHTML = `
-    <p style="color:rgba(255,255,255,0.5);font-size:12px;margin-bottom:8px;">Edita los nombres de los equipos:</p>
+    <p style="color:rgba(255,255,255,0.5);font-size:12px;margin-bottom:8px;">Edita o elimina equipos:</p>
     ${state.teams.map((t,i) => `
-      <div class="modal-team-input-row">
+      <div class="modal-team-input-row" id="menuRow${i}">
         <div class="team-color-dot c${i}" style="flex-shrink:0"></div>
         <input class="team-input" id="menuName${i}" type="text" value="${t.name}" maxlength="14" style="flex:1">
+        ${state.teams.length > 2 ? `<button class="remove-team" onclick="removeTeamFromGame(${i})">×</button>` : '<div style="width:32px"></div>'}
       </div>
     `).join('')}
   `;
   document.getElementById('menuModal').classList.add('open');
+}
+
+function removeTeamFromGame(idx) {
+  if (state.teams.length <= 2) { alert('Debe haber al menos 2 equipos'); return; }
+  if (!confirm(`¿Eliminar a ${state.teams[idx].name}?`)) return;
+  // Guardar nombres actuales antes de eliminar
+  state.teams.forEach((t, i) => {
+    const inp = document.getElementById(`menuName${i}`);
+    if (inp) t.name = inp.value.trim() || t.name;
+  });
+  state.teams.splice(idx, 1);
+  state.history = state.history.map(row => { row.splice(idx, 1); return row; });
+  closeMenuModal();
+  renderGame();
+  setTimeout(() => goToMenu(), 100);
 }
 
 function saveMenuChanges() {
@@ -503,15 +519,10 @@ function exportHistory() {
   a.click();
 }
 
-// ── INIT ──
-const saved = loadState();
-if (saved && state.teams.length >= 2 && !state.winnerShown) {
-  showGameScreen();
-} else {
-  clearState();
-  state = { meta: 200, teams: [], history: [], winnerShown: false };
-  initSetup();
-}
+// ── INIT — siempre empieza desde cero ──
+try { localStorage.removeItem('domino_state'); } catch(e) {}
+state = { meta: 200, teams: [], history: [], winnerShown: false };
+initSetup();
 
 // ── SERVICE WORKER ──
 if ('serviceWorker' in navigator) {
