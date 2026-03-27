@@ -481,13 +481,25 @@ function showWinner(team) {
 }
 function closeWinner() { document.getElementById('winnerOverlay').classList.remove('open'); }
 function resetAndPlay() {
-  // Reinicia puntos automáticamente y cierra el overlay
-  state.teams.forEach(t => t.score = 0);
-  state.history = [];
-  state.winnerShown = false;
+  // Cierra overlay y va al setup con campos vacíos
   document.getElementById('winnerOverlay').classList.remove('open');
-  renderGame();
-  saveState();
+  clearState();
+  const numTeams = state.teams.length;
+  const meta = state.meta;
+  state = { meta: meta, teams: [], history: [], winnerShown: false };
+  document.getElementById('gameScreen').classList.remove('active');
+  document.getElementById('bottomBar').classList.add('hidden');
+  document.getElementById('setupScreen').classList.add('active');
+  selectedMeta = meta;
+  document.querySelectorAll('.meta-btn').forEach(b => {
+    const val = parseInt(b.textContent);
+    b.classList.toggle('active', val === meta);
+  });
+  document.getElementById('metaCustom').value = '';
+  // Iniciar con campos vacíos según la cantidad de equipos anterior
+  document.getElementById('teamsGrid').innerHTML = '';
+  for (let i = 0; i < numTeams; i++) addTeamInput('');
+  updateAddTeamBtn();
 }
 
 // ── EXPORT ──
