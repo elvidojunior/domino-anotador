@@ -518,10 +518,12 @@ function exportHistory() {
 }
 
 // ── INIT ──
-if (loadState() && state.teams.length >= 2) {
-  // Restaurar juego guardado
+const saved = loadState();
+if (saved && state.teams.length >= 2 && !state.winnerShown) {
   showGameScreen();
 } else {
+  clearState();
+  state = { meta: 200, teams: [], history: [], winnerShown: false };
   initSetup();
 }
 
